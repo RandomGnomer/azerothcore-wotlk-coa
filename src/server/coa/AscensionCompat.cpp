@@ -46,6 +46,7 @@
 #include "AscensionCollectibleSpellData.h"
 #include "AscensionCustomClassData.h"
 #include "AscensionAuraAmounts.h"
+#include "AscensionMountSpeed.h"
 #include "AscensionClientSpellPatches.h"
 #include "DBCfmt.h"
 #include "AscensionClassTuning.h"
@@ -5125,7 +5126,8 @@ private:
             row.Strings[text] = std::string(record.GetString(SPELL_WIRE_STRING_FIELDS[text]));
         if (description != descriptions.end())
         {
-          row.Strings[SPELL_WIRE_DESCRIPTION] = description->second.Description;
+          if (!description->second.Description.empty())
+            row.Strings[SPELL_WIRE_DESCRIPTION] = description->second.Description;
           if (!description->second.ToolTip.empty())
             row.Strings[SPELL_WIRE_TOOLTIP] = description->second.ToolTip;
           descriptions.erase(description);
@@ -5153,7 +5155,8 @@ private:
       auto const description = descriptions.find(id);
       if (description != descriptions.end())
       {
-        rows[index].Strings[SPELL_WIRE_DESCRIPTION] = description->second.Description;
+        if (!description->second.Description.empty())
+          rows[index].Strings[SPELL_WIRE_DESCRIPTION] = description->second.Description;
         if (!description->second.ToolTip.empty())
           rows[index].Strings[SPELL_WIRE_TOOLTIP] = description->second.ToolTip;
         descriptions.erase(description);
@@ -9224,18 +9227,6 @@ public:
                         spellInfo->Effects[EFFECT_0].ApplyAuraName == SPELL_AURA_NONE)
                         spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_DUMMY;
                     break;
-                case 91616: case 91617: case 91618: case 91619:
-                    if (spellInfo->Effects[EFFECT_0].ApplyAuraName == SPELL_AURA_MOUNTED &&
-                        spellInfo->Effects[EFFECT_1].ApplyAuraName == SPELL_AURA_MOD_INCREASE_MOUNTED_SPEED &&
-                        spellInfo->Effects[EFFECT_2].Effect == SPELL_EFFECT_APPLY_AURA &&
-                        spellInfo->Effects[EFFECT_2].ApplyAuraName == SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED &&
-                        !spellInfo->HasAttribute(SPELL_ATTR4_ONLY_FLYING_AREAS))
-                    {
-                        spellInfo->Effects[EFFECT_2].Effect = 0;
-                        spellInfo->Effects[EFFECT_2].ApplyAuraName = SPELL_AURA_NONE;
-                        spellInfo->Effects[EFFECT_2].BasePoints = 0;
-                    }
-                    break;
                 default:
                     break;
             }
@@ -9789,6 +9780,20 @@ class spell_ascension_local_mount : public SpellScript
             GetCaster()->IsPlayer() && Validate(GetSpellInfo());
     }
 
+    uint32 FlyingVariant(uint16 riding) const
+    {
+        std::array<uint32, 3> preference = { _mount->Flying150, _mount->Flying280, _mount->Flying310 };
+        if (riding >= RIDING_SKILL_EXTRAORDINARY)
+            preference = { _mount->Flying310, _mount->Flying280, _mount->Flying150 };
+        else if (riding >= RIDING_SKILL_ARTISAN)
+            preference = { _mount->Flying280, _mount->Flying310, _mount->Flying150 };
+
+        for (uint32 spellId : preference)
+            if (spellId)
+                return spellId;
+        return 0;
+    }
+
     void HandleMount(SpellEffIndex effIndex)
     {
         PreventHitDefaultEffect(effIndex);
@@ -9803,26 +9808,9 @@ class spell_ascension_local_mount : public SpellScript
             return;
         }
         uint32 selected = riding >= RIDING_SKILL_JOURNEYMAN ? _mount->Ground100 : _mount->Ground60;
-        uint32 map = GetVirtualMapForMapAndZone(player->GetMapId(), player->GetZoneId());
-        bool canFly = map == MAP_OUTLAND || (map == MAP_NORTHREND && player->HasSpell(SPELL_COLD_WEATHER_FLYING));
-        AreaTableEntry const* area = sAreaTableStore.LookupEntry(player->GetAreaId());
-        Battlefield* battlefield = sBattlefieldMgr->GetBattlefieldToZoneId(player->GetZoneId());
-        if ((area && (area->flags & AREA_FLAG_NO_FLY_ZONE)) || (battlefield && !battlefield->CanFlyIn()) ||
-            player->InBattleground())
-            canFly = false;
-
-        if (canFly && riding >= RIDING_SKILL_EXPERT)
-        {
-            uint32 flying = riding >= RIDING_SKILL_ARTISAN ? (_mount->Flying310 ? _mount->Flying310 : _mount->Flying280) :
-                _mount->Flying150;
-            if (!flying)
-                flying = _mount->Flying150;
-            SpellInfo const* spell = flying ? sSpellMgr->GetSpellInfo(flying) : nullptr;
-            if (spell && spell->CheckLocation(player->GetMapId(), player->GetZoneId(),
-                player->GetAreaId(), player) == SPELL_CAST_OK &&
-                player->canFlyInZone(player->GetMapId(), player->GetZoneId(), spell))
-                selected = flying;
-        }
+        if (uint32 flying = FlyingVariant(riding); flying &&
+            AscensionMountSpeed::CanFly(player, sSpellMgr->GetSpellInfo(flying)))
+            selected = flying;
 
         if (!selected)
             return;
