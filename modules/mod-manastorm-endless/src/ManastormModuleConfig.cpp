@@ -3,6 +3,9 @@
 #include "Config.h"
 #include <algorithm>
 #include "Log.h"
+#include "ManastormReleaseStage.h"
+
+#include <algorithm>
 
 namespace ManastormModuleConfig
 {
@@ -13,6 +16,7 @@ namespace ManastormModuleConfig
         bool weeklyCacheLockoutEnabled = true;
         uint32 weeklyCacheLockoutLimit = 5;
         ManastormClientMode clientMode = ManastormClientMode::Ascension;
+        uint32 releaseStage = ManastormReleaseStage::AllReleased;
     }
 
     void Load(bool reload)
@@ -25,6 +29,8 @@ namespace ManastormModuleConfig
             LOG_ERROR("module.manastorm.endless", "Invalid Manastorm.WeeklyCacheLockout.Limit={}; "
                 "expected 0..255, using 5.", requestedLimit);
         uint32 const requestedMode = sConfigMgr->GetOption<uint32>("Manastorm.ClientMode", 2);
+        releaseStage = std::min(sConfigMgr->GetOption<uint32>("Ascension.CallboardCache.ReleaseStage",
+            ManastormReleaseStage::AllReleased), ManastormReleaseStage::AllReleased);
         if (reload)
         {
             // Switching transport or disabling hooks during a run strands its
@@ -76,10 +82,15 @@ namespace ManastormModuleConfig
         return clientMode == ManastormClientMode::Ascension;
     }
 
+    uint32 ReleaseStage()
+    {
+        return releaseStage;
+    }
+
     void LogConfiguration()
     {
-        LOG_INFO("module.manastorm.endless", "Manastorm owner=mod-manastorm-endless enabled={} clientMode={} ({}). "
-            "The Ascension donor run service is not registered.", enabled, uint32(clientMode),
-            IsNativeClientMode() ? "Ascension native" : "reconstructed addon");
+        LOG_INFO("module.manastorm.endless", "Manastorm owner=mod-manastorm-endless enabled={} clientMode={} ({}) "
+            "releaseStage={}. The Ascension donor run service is not registered.", enabled, uint32(clientMode),
+            IsNativeClientMode() ? "Ascension native" : "reconstructed addon", releaseStage);
     }
 }

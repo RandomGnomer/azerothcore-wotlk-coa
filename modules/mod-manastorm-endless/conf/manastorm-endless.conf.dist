@@ -16,6 +16,9 @@ Manastorm.WeeklyCacheLockout.Limit = 5
 # Individual progression affixes still require their matching native unlock/toast; those depths are unchanged.
 Manastorm.AffixMinimumLevel = 50
 
+# Raid tiers follow Ascension.CallboardCache.ReleaseStage in coa.conf (3 Molten Core ... 8 Naxxramas): endgame caches above the stage fall back to the highest released cache, and Greedy Demon
+# loot stays at or below the item level of the released caches. Applied on .reload config.
+
 # Client integration mode (requires restart):
 #   1 = reconstructed 3.3.5 client addon transport (MANASTORM addon prefix)
 #   2 = original Ascension native Manastorm protocol (uses the included CoA native opcode bridge)
