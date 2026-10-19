@@ -16,6 +16,7 @@ namespace ManastormModuleConfig
     ManastormClientMode ClientMode();
     bool IsReconstructedClientMode();
     bool IsNativeClientMode();
+    uint32 ReleaseStage();
     void LogConfiguration();
 }
 
