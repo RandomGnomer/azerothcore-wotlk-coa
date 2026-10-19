@@ -114,7 +114,7 @@ Gallywix (80540) now offers exactly two gossip options: "What are the rules?" an
 "Who has won recently?" His rules describe the active round's interval, contribution rate
 and house tickets, equal ticket odds, mailed player rewards and destroyed house-win pots.
 His ledger lists the five most recent winner records, newest first, with jackpot amounts
-and purchased-ticket counts; house wins show house tickets and zero purchased tickets.
+and purchased-ticket counts; house wins show house tickets and the purchased tickets that lost.
 Names remain the recorded names at draw time. Both options stay available while ticket
 sales are disabled. Gallywix cannot sell tickets, including through old purchase actions.
 No client changes or additional migrations are needed for this dialogue.

@@ -6,8 +6,8 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#define LOG_INFO(...)
-#define LOG_ERROR(...)
+#define LOG_INFO(...) do {} while (false)
+#define LOG_ERROR(...) do {} while (false)
 namespace
 {
 using uint32 = uint32_t;
