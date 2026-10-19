@@ -197,10 +197,11 @@ jobs:
           & "$bin\worldserver.exe" --version
           if ($LASTEXITCODE -ne 0) { throw "worldserver --version exited with $LASTEXITCODE" }
           "BIN_DIR=$bin" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "ARTIFACT_NAME=server-$('${{ inputs.branch }}' -replace '[^A-Za-z0-9._-]', '-')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
-          name: server-${{ inputs.branch }}
+          name: ${{ env.ARTIFACT_NAME }}
           path: |
             ${{ env.BIN_DIR }}/worldserver.exe
             ${{ env.BIN_DIR }}/authserver.exe
