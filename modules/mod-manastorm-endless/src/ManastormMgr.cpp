@@ -9487,7 +9487,7 @@ bool ManastormMgr::HandleReleaseAfterWipe(Player* player)
     if (!run || run->GetState() != ManastormRunState::AwaitingExit)
         return false;
 
-    FailRun(*run, "All run members are dead.", 0, ManastormFailureExit::FactionHub);
+    FailRun(*run, "All run members are dead.", 0, ManastormFailureExit::SavedLocation);
     return true;
 }
 
@@ -9510,7 +9510,7 @@ bool ManastormMgr::StopRun(Player* player, std::string& error)
 
     if (run->GetState() == ManastormRunState::AwaitingExit)
     {
-        FailRun(*run, "All run members are dead.", 0, ManastormFailureExit::FactionHub);
+        FailRun(*run, "All run members are dead.", 0, ManastormFailureExit::SavedLocation);
         return true;
     }
 
