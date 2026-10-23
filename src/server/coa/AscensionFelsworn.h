@@ -18,7 +18,7 @@ enum FelswornSpells : uint32
     MannorothFelfury = 801043,
     Unphased = 803645
 };
-enum FelswornEvents : uint16
+enum FelswornEventId : uint16
 {
     RefreshEvent = 1,
     StaggerTick = 2
