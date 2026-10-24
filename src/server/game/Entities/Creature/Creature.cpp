@@ -2806,8 +2806,11 @@ bool Creature::_IsTargetAcceptable(Unit const* target) const
 {
     ASSERT(target);
 
+    // a hostile creature fighting us is acceptable even when our faction sees it as friendly
+    bool const foughtByHostile = target->IsHostileTo(this) && IsInCombatWith(target);
+
     // if the target cannot be attacked, the target is not acceptable
-    if (IsFriendlyTo(target) || !target->isTargetableForAttack(false, this) || (m_vehicle && (IsOnVehicle(target) || m_vehicle->GetBase()->IsOnVehicle(target))))
+    if ((IsFriendlyTo(target) && !foughtByHostile) || !target->isTargetableForAttack(false, this) || (m_vehicle && (IsOnVehicle(target) || m_vehicle->GetBase()->IsOnVehicle(target))))
         return false;
 
     if (target->HasUnitState(UNIT_STATE_DIED))
@@ -2822,7 +2825,7 @@ bool Creature::_IsTargetAcceptable(Unit const* target) const
     Unit const* targetVictim = target->getAttackerForHelper();
 
     // if I'm already fighting target, or I'm hostile towards the target, the target is acceptable
-    if (IsEngagedBy(target) || IsHostileTo(target))
+    if (IsEngagedBy(target) || IsHostileTo(target) || foughtByHostile)
         return true;
 
     // if the target's victim is friendly, and the target is neutral, the target is acceptable
