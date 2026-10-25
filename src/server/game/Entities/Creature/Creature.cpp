@@ -2962,9 +2962,9 @@ bool Creature::IsNpcFightingMe(Unit const* who) const
     return !who->IsControlledByPlayer() && who->GetThreatMgr().IsThreatenedBy(this);
 }
 
-void Creature::EndCombatWithVictimsLostToLeash()
+void Creature::EndCombatWithUnitsLeftBehind()
 {
-    if (GetMap()->IsDungeon() || IsWithinLeashArea())
+    if (GetMap()->IsDungeon())
         return;
 
     auto const& threatenedByMe = m_threatManager.GetThreatenedByMeList();
@@ -2972,16 +2972,16 @@ void Creature::EndCombatWithVictimsLostToLeash()
         [](auto const& entry) { return !entry.second->GetOwner()->IsControlledByPlayer(); }))
         return;
 
-    static constexpr float LostVictimDistance = 45.0f;
-    std::vector<ObjectGuid> lostVictims;
+    static constexpr float LeftBehindDistance = 50.0f;
+    std::vector<ObjectGuid> leftBehind;
     for (auto const& [guid, ref] : GetCombatManager().GetPvECombatRefs())
     {
         Unit* other = ref->GetOther(this);
-        if (!IsNpcFightingMe(other) && !IsWithinDist(other, LostVictimDistance))
-            lostVictims.push_back(guid);
+        if (!IsNpcFightingMe(other) && !IsWithinDist(other, LeftBehindDistance))
+            leftBehind.push_back(guid);
     }
 
-    for (ObjectGuid const& guid : lostVictims)
+    for (ObjectGuid const& guid : leftBehind)
     {
         auto const& combatRefs = GetCombatManager().GetPvECombatRefs();
         auto ref = combatRefs.find(guid);

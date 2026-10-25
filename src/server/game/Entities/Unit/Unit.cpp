@@ -1359,9 +1359,7 @@ uint32 Unit::DealDamage(Unit* attacker, Unit* victim, uint32 damage, CleanDamage
         if (!victim->IsPlayer())
         {
             /// @fix: Hack to avoid premature leashing
-            // An NPC hitting a creature that is chasing someone else must not let it chase that target past its leash
-            if (damagetype != DOT && damage > 0 && !victim->GetOwnerGUID().IsPlayer() && (!spellProto || !spellProto->HasAura(SPELL_AURA_DAMAGE_SHIELD))
-                && (!attacker || attacker->IsControlledByPlayer() || victim->GetVictim() == attacker))
+            if (damagetype != DOT && damage > 0 && !victim->GetOwnerGUID().IsPlayer() && (!spellProto || !spellProto->HasAura(SPELL_AURA_DAMAGE_SHIELD)))
                 victim->ToCreature()->UpdateLeashExtensionTime();
 
             if (attacker && attacker != victim)
@@ -8139,7 +8137,7 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
     else if (creature && ownerCreature && ownerCreature->GetVictim() == victim)
         creature->SetLastLeashExtensionTimePtr(ownerCreature->GetLastLeashExtensionTimePtr());
     // Update leash timer when attacking creatures
-    else if (victim->IsCreature() && (IsControlledByPlayer() || victim->GetVictim() == this))
+    else if (victim->IsCreature())
         victim->ToCreature()->UpdateLeashExtensionTime();
 
     // Player-controlled creatures (pets, charms) enter combat on contact instead
@@ -12546,7 +12544,7 @@ Unit* Creature::SelectVictim()
 
     if (CanHaveThreatList())
     {
-        EndCombatWithVictimsLostToLeash();
+        EndCombatWithUnitsLeftBehind();
         target = m_threatManager.GetCurrentVictim();
     }
     else if (!HasReactState(REACT_PASSIVE))
