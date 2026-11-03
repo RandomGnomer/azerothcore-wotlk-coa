@@ -38,7 +38,10 @@ enum ZulFarrakCreatures
     NPC_RAVEN                   = 7605,
     NPC_ORO                     = 7606,
     NPC_WEEGLI                  = 7607,
-    NPC_MURTA                   = 7608
+    NPC_MURTA                   = 7608,
+
+    NPC_UKORZ_SANDSCALP         = 7267,
+    NPC_RUUZLU                  = 7797
 };
 
 enum ZulFarrakGameobjects

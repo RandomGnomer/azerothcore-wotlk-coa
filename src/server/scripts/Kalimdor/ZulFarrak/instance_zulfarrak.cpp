@@ -124,6 +124,8 @@ public:
         ObjectGuid RavenGUID;
         ObjectGuid MurtaGUID;
         ObjectGuid ShadowpriestGUID;
+        ObjectGuid UkorzGUID;
+        ObjectGuid RuuzluGUID;
 
         GuidList addsAtBase;
         GuidList movedadds;
@@ -174,9 +176,37 @@ public:
                 case NPC_SHADOWPRIEST_SEZZZIZ:
                     ShadowpriestGUID = creature->GetGUID();
                     break;
+                case NPC_UKORZ_SANDSCALP:
+                    UkorzGUID = creature->GetGUID();
+                    creature->SetImmuneToPC(!IsEndDoorOpen());
+                    break;
+                case NPC_RUUZLU:
+                    RuuzluGUID = creature->GetGUID();
+                    creature->SetImmuneToPC(!IsEndDoorOpen());
+                    break;
                 default:
                     break;
             }
+        }
+
+        bool IsEndDoorOpen() const
+        {
+            return PyramidPhase >= PYRAMID_GATES_DESTROYED;
+        }
+
+        bool IsWeegliAlive() const
+        {
+            Creature* weegli = instance->GetCreature(WeegliGUID);
+            return weegli && weegli->IsAlive();
+        }
+
+        void OpenEndDoor()
+        {
+            HandleGameObject(EndDoorGUID, true);
+
+            for (ObjectGuid const& guid : { UkorzGUID, RuuzluGUID })
+                if (Creature* boss = instance->GetCreature(guid))
+                    boss->SetImmuneToPC(false);
         }
 
         void OnGameObjectCreate(GameObject* gameobject) override
@@ -185,7 +215,7 @@ public:
             {
                 case GO_END_DOOR:
                     EndDoorGUID = gameobject->GetGUID();
-                    if (PyramidPhase == PYRAMID_DONE)
+                    if (IsEndDoorOpen())
                     {
                         HandleGameObject(gameobject->GetGUID(), true, gameobject);
                     }
@@ -202,12 +232,14 @@ public:
                 case NPC_BLY:
                     PyramidPhase = PYRAMID_DONE;
                     SaveToDB();
-                    HandleGameObject(EndDoorGUID, true);
+                    // a living Weegli still blows up the gate himself
+                    if (!IsWeegliAlive())
+                        OpenEndDoor();
                     break;
                 case NPC_WEEGLI:
                     // nobody is left to blow up the gate
-                    if (PyramidPhase < PYRAMID_GATES_DESTROYED)
-                        HandleGameObject(EndDoorGUID, true);
+                    if (PyramidPhase == PYRAMID_DONE)
+                        OpenEndDoor();
                     break;
                 default:
                     break;
@@ -220,6 +252,8 @@ public:
             {
                 case DATA_PYRAMID:
                     PyramidPhase = data;
+                    if (IsEndDoorOpen())
+                        OpenEndDoor();
                     break;
                 case DATA_GAHZRILLA:
                     GahzrillaSummoned = data;

@@ -152,7 +152,6 @@ public:
                             me->SetFaction(FACTION_MONSTER);
                             Player* target = ObjectAccessor::GetPlayer(*me, PlayerGUID);
 
-                            switchFactionIfAlive(NPC_WEEGLI, target);
                             switchFactionIfAlive(NPC_RAVEN, target);
                             switchFactionIfAlive(NPC_ORO, target);
                             switchFactionIfAlive(NPC_MURTA, target);
@@ -389,6 +388,7 @@ public:
         npc_weegli_blastfuseAI(Creature* creature) : ScriptedAI(creature)
         {
             instance = creature->GetInstanceScript();
+            runningToDoor = false;
             destroyingDoor = false;
             outroTimer = 2000;
             outroStage = 0;
@@ -398,6 +398,7 @@ public:
         uint32 LandMine_Timer;
         uint32 outroTimer;
         uint8 outroStage;
+        bool runningToDoor;
         bool destroyingDoor;
         InstanceScript* instance;
 
@@ -437,7 +438,8 @@ public:
                                 me->GetMotionMaster()->MovePoint(2, 1871.18f, 1100.f, 8.88f);
                                 Talk(SAY_WEEGLI_OUT_OF_HERE);
                                 me->DespawnOrUnsummon(8s);
-                                instance->SetData(DATA_PYRAMID, PYRAMID_GATES_DESTROYED);
+                                instance->SetData(DATA_PYRAMID,
+                                    std::max<uint32>(instance->GetData(DATA_PYRAMID), PYRAMID_GATES_DESTROYED));
                                 destroyingDoor = false;
                                 break;
                         }
@@ -495,8 +497,9 @@ public:
             {
                 instance->SetData(DATA_PYRAMID, PYRAMID_MOVED_DOWNSTAIRS);
             }
-            else if (instance->GetData(DATA_PYRAMID) == PYRAMID_DESTROY_GATES)
+            else if (runningToDoor)
             {
+                runningToDoor = false;
                 destroyingDoor = true;
             }
         }
@@ -518,22 +521,30 @@ public:
             {
                 instance->SetData(DATA_PYRAMID, PYRAMID_MOVED_DOWNSTAIRS);
             }
-            else if (instance->GetData(DATA_PYRAMID) == PYRAMID_DESTROY_GATES)
+            else if (runningToDoor)
             {
+                runningToDoor = false;
                 destroyingDoor = true;
             }
         }
 
+        void DoAction(int32 /*param*/) override
+        {
+            DestroyDoor();
+        }
+
         void DestroyDoor()
         {
-            if (me->IsAlive())
+            if (me->IsAlive() && !runningToDoor && !destroyingDoor && outroStage == 0)
             {
+                runningToDoor = true;
+                me->CombatStop(true);
                 me->SetFaction(FACTION_FRIENDLY);
                 me->SetWalk(false);
                 me->GetMotionMaster()->MovePoint(0, { 1858.57f, 1146.35f, 14.745f, 3.85f });
                 me->SetHomePosition(1858.57f, 1146.35f, 14.745f, 3.85f);
                 Talk(SAY_WEEGLI_OK_I_GO);
-                instance->SetData(DATA_PYRAMID, PYRAMID_DESTROY_GATES);
+                instance->SetData(DATA_PYRAMID, std::max<uint32>(instance->GetData(DATA_PYRAMID), PYRAMID_DESTROY_GATES));
             }
         }
 
@@ -556,6 +567,7 @@ public:
             {
                 case PYRAMID_MOVED_DOWNSTAIRS:
                 case PYRAMID_KILLED_ALL_TROLLS:
+                case PYRAMID_DONE:
                     AddGossipItemFor(player, GOSSIP_ICON_CHAT, GOSSIP_WEEGLI, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
                     SendGossipMenuFor(player, 1514, me->GetGUID());  //if event can proceed to end
                     break;
