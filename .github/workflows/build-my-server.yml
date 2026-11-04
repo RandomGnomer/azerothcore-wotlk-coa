@@ -1,6 +1,7 @@
 name: build-my-server
 # Builds worldserver.exe and authserver.exe the same way the CoA Server Manager release does:
-# this repository's chosen branch plus mod-coa-playerbots, SQUID mod-playerbots and mod-coa-content-scaling.
+# this repository's chosen branch plus mod-coa-playerbots, SQUID mod-playerbots, mod-dungeon-clear and
+# mod-coa-content-scaling, with the Manager's patches from Corfirean/coa-server-build applied to SQUID and Dungeon Clear.
 # Module defaults are the commits in the Server Manager build currently installed (Licenses\NOTICE.txt).
 on:
   workflow_dispatch:
@@ -10,13 +11,19 @@ on:
         default: my-server
       bots_ref:
         description: Corfirean/mod-coa-playerbots commit
-        default: c76847a19aaf0b709a6a3dcc785c09ada0aa8fee
+        default: 4f6cf99e6bf509ae2b178e993d1170cc7fe0cb0c
       squid_ref:
         description: Zyth45/mod-playerbots commit
-        default: 662213082340c862452042473f13b34921373fe3
+        default: fa4cfd31997367b3e574a2b89b858c4669ff53fb
+      dungeon_ref:
+        description: Zyth45/mod-dungeon-clear commit
+        default: 9a9d09cf512e0a883af9cda6973445b81c123b13
+      patches_ref:
+        description: Corfirean/coa-server-build commit holding the module patches
+        default: 9705eb844085b72379bef517635968473cb43419
       scaling_ref:
         description: Corfirean/mod-coa-content-scaling commit
-        default: d75f141fb4998f7c486bba737fe045d46847cd37
+        default: 0898a3e976677cde470a60ba4e6f9bb9d0fe5e2c
 
 concurrency:
   group: ${{ github.workflow }}-${{ inputs.branch }}
@@ -151,6 +158,30 @@ jobs:
           repository: Zyth45/mod-playerbots
           ref: ${{ inputs.squid_ref }}
           path: modules/mod-playerbots
+      - name: Fetch mod-dungeon-clear
+        uses: actions/checkout@v7
+        with:
+          repository: Zyth45/mod-dungeon-clear
+          ref: ${{ inputs.dungeon_ref }}
+          path: modules/mod-dungeon-clear
+      - name: Fetch the Manager's module patches
+        uses: actions/checkout@v7
+        with:
+          repository: Corfirean/coa-server-build
+          ref: ${{ inputs.patches_ref }}
+          path: _build
+      - name: Apply the Manager's module patches
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($pair in @(@('modules/mod-playerbots', 'squid-coa-validation.patch'),
+                              @('modules/mod-dungeon-clear', 'dungeon-clear-coa-validation.patch'))) {
+            $patch = (Resolve-Path "_build/patches/$($pair[1])").Path
+            git -C $pair[0] apply --check $patch
+            if ($LASTEXITCODE -ne 0) { throw "$($pair[1]) does not apply" }
+            git -C $pair[0] apply $patch
+            if ($LASTEXITCODE -ne 0) { throw "applying $($pair[1]) failed" }
+          }
       - name: Place the modules where the core expects them
         shell: pwsh
         run: |
@@ -169,6 +200,7 @@ jobs:
           "core commit: $(git rev-parse HEAD)"
           "bots commit: $(git -C _bots rev-parse HEAD)"
           "squid commit: $(git -C modules/mod-playerbots rev-parse HEAD)"
+          "dungeon-clear commit: $(git -C modules/mod-dungeon-clear rev-parse HEAD)"
           "scaling commit: $(git -C _scaling rev-parse HEAD)"
       - name: MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
