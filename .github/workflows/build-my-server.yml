@@ -11,7 +11,7 @@ on:
         default: my-server
       bots_ref:
         description: Corfirean/mod-coa-playerbots commit
-        default: 4f6cf99e6bf509ae2b178e993d1170cc7fe0cb0c
+        default: 447558bc27d6bb447aaf10eefcb2e85ac2b15c32
       squid_ref:
         description: Zyth45/mod-playerbots commit
         default: fa4cfd31997367b3e574a2b89b858c4669ff53fb
@@ -20,10 +20,10 @@ on:
         default: 9a9d09cf512e0a883af9cda6973445b81c123b13
       patches_ref:
         description: Corfirean/coa-server-build commit holding the module patches
-        default: 9705eb844085b72379bef517635968473cb43419
+        default: d9aaa5263154473b2fe1623172492f88e6e03d73
       scaling_ref:
         description: Corfirean/mod-coa-content-scaling commit
-        default: 0898a3e976677cde470a60ba4e6f9bb9d0fe5e2c
+        default: 3c2febf636bd09087bb278e381b975271a70fdf6
 
 concurrency:
   group: ${{ github.workflow }}-${{ inputs.branch }}
