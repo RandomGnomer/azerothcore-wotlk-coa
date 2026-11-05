@@ -7643,7 +7643,7 @@ private:
         player->SendAllSpellChargeStates();
         SendAscensionRunemasterEchoesCooldown(player);
         AscensionDisplayPatchService::Instance().SendPatchStream(player);
-        SendAscensionLfgObjectiveDungeon(player);
+        RefreshAscensionLfgObjectiveDungeon(player);
         LOG_DEBUG("coa", "Resent spell charge state to {} after client world entry",
                   player->GetName());
         break;
